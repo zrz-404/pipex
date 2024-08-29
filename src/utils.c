@@ -6,7 +6,7 @@
 /*   By: jroseiro <jroseiro@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/28 11:59:58 by jroseiro          #+#    #+#             */
-/*   Updated: 2024/08/29 13:18:05 by jroseiro         ###   ########.fr       */
+/*   Updated: 2024/08/29 16:48:22 by jroseiro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ int open_f(char *file, int in_or_out)
 
 	if (in_or_out == 0)
 		ret = open(file, O_RDONLY);
-	else if (in_or_out == 1)
+	if (in_or_out == 1)
 		ret = open(file, O_WRONLY | O_CREAT | O_TRUNC, 0644); 
 	if (ret == -1)
     {
@@ -33,6 +33,7 @@ int open_f(char *file, int in_or_out)
         ft_putstr_fd(file, 2);
         ft_putstr_fd(": ", 2);
         ft_putendl_fd(strerror(errno), 2);
+		exit(ret);
     }
 	return (ret);
 }
