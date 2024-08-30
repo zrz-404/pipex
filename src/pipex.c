@@ -6,13 +6,13 @@
 /*   By: jroseiro <jroseiro@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/08/28 10:18:40 by jroseiro          #+#    #+#             */
-/*   Updated: 2024/08/29 12:55:09 by jroseiro         ###   ########.fr       */
+/*   Updated: 2024/08/30 10:52:17 by jroseiro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../pipex.h"
 
-void run (char *cmd, char **env)
+void	run(char *cmd, char **env)
 {
 	char	**s_cmd;
 	char	*path;
@@ -22,62 +22,57 @@ void run (char *cmd, char **env)
 	if (execve(path, s_cmd, env) == -1)
 	{
 		ft_putstr_fd("pipex: ", 2);
-        ft_putstr_fd(s_cmd[0], 2);
-        ft_putstr_fd(": ", 2);
-        ft_putendl_fd(strerror(errno), 2);
+		ft_putstr_fd(s_cmd[0], 2);
+		ft_putstr_fd(": ", 2);
+		ft_putendl_fd(strerror(errno), 2);
 		usa(s_cmd);
 		free(path);
-		exit(127); // 127 is the standard exit code for command not found
+		exit(127);
 	}
 }
 
-
-
-void child_in(char **argv, int *pipefd, char **env)
+void	child_in(char **argv, int *pipefd, char **env)
 {
-	int fd;
+	int	fd;
 
 	fd = open_f(argv[1], 0);
-	dup2(fd, STDIN_FILENO);	// redirect standard input to file descriptor
-	dup2(pipefd[1], 1);	//redirect standard output to write end of the pipe
-	close(pipefd[0]);	// close the read end of the pipe
+	dup2(fd, STDIN_FILENO);
+	dup2(pipefd[1], 1);
+	close(pipefd[0]);
 	close(fd);
-	run(argv[2], env);	// exe command, aka 3rd (2nd counting from 0) argument inputed in main
+	run(argv[2], env);
 }
 
-
-
-void child_out(char **argv, int *pipefd, char **env)
+void	child_out(char **argv, int *pipefd, char **env)
 {
-	int fd;
+	int	fd;
 
 	fd = open_f(argv[4], 1);
 	dup2(fd, STDOUT_FILENO);
 	dup2(pipefd[0], 0);
 	close(pipefd[1]);
 	close(fd);
-	run(argv[3], env);	// all this is is basically the oposite of the child's actions
+	run(argv[3], env);
 }
 
-
-int main(int argc, char **argv, char **env)
+int	main(int argc, char **argv, char **env)
 {
-	int pipefd[2]; // creating two 'processes' bcs 2 FDs
-	pid_t cpid[2]; // child process ID
-	int status;
+	int		pipefd[2];
+	pid_t	cpid[2];
+	int		status;
 
-	if (argc !=5) // if it has more than 5 arguments, something is wrong, error handling
-		mayday(1);// emergency exit 🚨🚨🚨🚨
-	if (pipe(pipefd) == -1) // if the fd is -1 there is an error and we need to exit with correct error handling
+	if (argc != 5)
+		mayday(1);
+	if (pipe(pipefd) == -1)
 		exit (EXIT_FAILURE);
-	cpid[0] = fork(); // forking the child processes
+	cpid[0] = fork();
 	if (cpid[0] == 0)
 		child_in(argv, pipefd, env);
 	else
 	{
 		cpid[1] = fork();
 		if (cpid[1] == 0)
-			child_out(argv, pipefd, env); // we need to open the file, dup2 it, 
+			child_out(argv, pipefd, env);
 		close(pipefd[0]);
 		close(pipefd[1]);
 		waitpid(cpid[0], &status, 0);
@@ -87,39 +82,3 @@ int main(int argc, char **argv, char **env)
 	}
 	return (0);
 }
-
-/*
-	// creating two pipes from the pipefd[2] 
-	// (bcs the two means its using two file descriptors, one for writting one for reading)
-	pipe(pipefd);
-	// Forking the processes
-	cpid = fork();
-
-	// setting up the file descriptors
-		// FOR COMMAND 1
-	dup2(pipefd[1], STDOUT_FILENO);
-	close(pipefd[1]);
-		// FOR COMMAND 2
-	dup2(pipefd[0], STDOUT_FILENO);
-	close(pipefd[0]);
-	execlp("command1", "command1", (char *) NULL);
-	execlp("command2", "command2", (char *) NULL);
-
-	close(pipefd[0]);
-	close(pipefd[1]);
-
-
-
-
-
-
- execve (execute with vector of environment variables) is what
-  allows the shell the execute a command.
-  Everytime we write a command in the terminal, execve() is run,
-  which then takes up the task of executing the command that one
-  types in the terminal.
-
-  envp is an array of pointers to strings, conventionally of the
-  form key=value, which are passed as the environment of the new
-  program.  The envp array must be terminated by a null pointer.
-*/
